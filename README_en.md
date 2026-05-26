@@ -9,12 +9,12 @@ This package provides launch files and configurations for SLAM Toolbox, enabling
 **Supported:**
 - Asynchronous online mapping mode (`async_slam_toolbox_node`)
 - Synchronous online mapping mode (`sync_slam_toolbox_node`)
+- Localization-only mode (`localization_slam_toolbox_node`, loading an existing `.posegraph` map)
 - 2D LiDAR data input
 - Real-time occupancy grid map generation
 
 **Not Supported:**
 - 3D SLAM
-- Localization-only mode (requires additional configuration)
 
 ## Quick Start
 
@@ -52,6 +52,42 @@ ros2 launch slam_toolbox_run online_async_launch.py
 ros2 launch slam_toolbox_run online_sync.launch.py
 ```
 
+**Save an Occupancy Grid Map:**
+
+```bash
+ros2 run nav2_map_server map_saver_cli -f my_map
+```
+
+**Save a Posegraph Map:**
+
+This map is used by localization-only mode. Localization-only mode can replace AMCL to estimate the `map` -> `odom` TF.
+
+```bash
+# This generates both .posegraph and .data files
+ros2 service call /slam_toolbox/serialize_map slam_toolbox/srv/SerializePoseGraph "{filename: '/home/root/my_map'}"
+```
+
+**Localization-only Mode:**
+Prepare a `.posegraph` map saved by SLAM Toolbox, then specify the map path with `map_file_name` without the `.posegraph` suffix:
+
+```bash
+ros2 launch slam_toolbox_run localization_launch.py map_file_name:=/path/to/saved_map
+```
+
+To use a custom localization parameter file, specify `params_file` as well:
+
+```bash
+ros2 launch slam_toolbox_run localization_launch.py \
+	map_file_name:=/path/to/saved_map \
+	params_file:=/path/to/mapper_params_localization.yaml
+```
+
+Example: if the map file is `/home/root/my_map.posegraph`, use the following launch argument:
+
+```bash
+ros2 launch slam_toolbox_run localization_launch.py map_file_name:=/home/root/my_map
+```
+
 **Published Topics:**
 
 | Topic | Type | Description |
@@ -64,6 +100,16 @@ ros2 launch slam_toolbox_run online_sync.launch.py
 Configuration files are located in the `config/` directory:
 - `mapper_params_online_async.yaml` - Parameters for async mode
 - `mapper_params_online_sync.yaml` - Parameters for sync mode
+- `mapper_params_localization.yaml` - Parameters for localization-only mode
+
+Supported launch arguments of `launch/localization_launch.py`:
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `map_file_name` | None, required | Path to the `.posegraph` map file without the file suffix |
+| `params_file` | `config/mapper_params_localization.yaml` | Path to the SLAM Toolbox localization parameter file |
+
+Localization-only mode depends on an existing map and requires the `/scan` topic and the `odom` -> `base_footprint` TF to be published correctly. After startup, the node loads the specified posegraph and publishes the `map` -> `odom` transform for localization.
 
 For more details, please refer to the [SLAM Toolbox Official Documentation](https://github.com/SteveMacenski/slam_toolbox).
 
@@ -74,6 +120,9 @@ A: Check if the `/scan` topic is being published correctly, and ensure the TF tr
 
 **Q: How to choose between async and sync mode?**
 A: Async mode offers better performance and is suitable for most scenarios; sync mode is suitable for scenarios requiring strict time synchronization.
+
+**Q: Localization-only mode fails to start or reports that the map cannot be found?**
+A: Check whether `map_file_name` points to a saved `.posegraph` map, and make sure the argument value does not include the `.posegraph` suffix.
 
 ## Version & Release
 
