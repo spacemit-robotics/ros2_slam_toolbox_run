@@ -1,0 +1,38 @@
+## Copyright (C) 2026 SpacemiT (Hangzhou) Technology Co. Ltd.
+## SPDX-License-Identifier: Apache-2.0
+
+module: middleware/ros2/slam/slam_toolbox_run
+
+tests:
+  - name: slam-toolbox-online-async-rosbag-slam
+    description: >-
+      Replays recorded LaserScan/TF/Odometry data through online_async_launch.py
+      and verifies slam_toolbox publishes a non-empty occupancy grid map.
+    category: functional
+    scopes: [pr]
+    timeout_s: 180
+    workdir: sdk
+    requires:
+      commands: [bash, python3]
+      files:
+        - middleware/ros2/slam/slam_toolbox_run/tests/slam_toolbox_test_data/metadata.yaml
+        - middleware/ros2/slam/slam_toolbox_run/tests/slam_toolbox_test_data/slam_toolbox_test_data_0.db3
+    artifacts:
+      - output/test/pr/middleware__ros2__slam__slam_toolbox_run/modules/middleware__ros2__slam__slam_toolbox_run/logs/slam_toolbox_online_async_rosbag_slam.log
+    command: |
+      bash middleware/ros2/slam/slam_toolbox_run/tests/test_slam_toolbox_online_async_rosbag_slam.sh
+
+  - name: slam-toolbox-invalid-config
+    description: >-
+      Starts slam_toolbox with an invalid parameter file and verifies the launch
+      fails quickly with an explicit configuration parse error.
+    category: functional
+    scopes: [pr]
+    timeout_s: 60
+    workdir: sdk
+    requires:
+      commands: [bash, python3]
+    artifacts:
+      - output/test/pr/middleware__ros2__slam__slam_toolbox_run/modules/middleware__ros2__slam__slam_toolbox_run/logs/slam_toolbox_invalid_config.log
+    command: |
+      bash middleware/ros2/slam/slam_toolbox_run/tests/test_slam_toolbox_invalid_config.sh
